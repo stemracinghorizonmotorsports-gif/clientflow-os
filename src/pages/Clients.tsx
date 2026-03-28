@@ -125,6 +125,7 @@ const Clients = () => {
           ))}
         </div>
       </div>
+      <OnboardClientDialog open={showOnboard} onClose={() => setShowOnboard(false)} />
     </AppLayout>
   );
 };
