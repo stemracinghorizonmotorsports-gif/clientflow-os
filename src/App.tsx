@@ -10,6 +10,7 @@ import Projects from "./pages/Projects.tsx";
 import Approvals from "./pages/Approvals.tsx";
 import Messages from "./pages/Messages.tsx";
 import Billing from "./pages/Billing.tsx";
+import ValueDashboard from "./pages/ValueDashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
