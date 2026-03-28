@@ -10,6 +10,7 @@ import Projects from "./pages/Projects.tsx";
 import Approvals from "./pages/Approvals.tsx";
 import Messages from "./pages/Messages.tsx";
 import Billing from "./pages/Billing.tsx";
+import ValueDashboard from "./pages/ValueDashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/approvals" element={<Approvals />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/value" element={<ValueDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
