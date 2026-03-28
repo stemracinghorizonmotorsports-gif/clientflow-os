@@ -91,7 +91,7 @@ const Clients = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">{client.avatar}</span>
+                      <span className="text-sm font-bold text-primary">{client.avatar_initial}</span>
                     </div>
                     <div>
                       <h3 className="font-heading font-semibold text-foreground group-hover:text-primary transition">
