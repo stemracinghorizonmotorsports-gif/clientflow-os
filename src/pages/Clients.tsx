@@ -106,9 +106,9 @@ const Clients = () => {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{client.projects} projects</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    client.status === "Active"
+                    client.status === "active"
                       ? "bg-success/10 text-success"
-                      : client.status === "Onboarding"
+                      : client.status === "onboarding"
                       ? "bg-primary/10 text-primary"
                       : "bg-muted text-muted-foreground"
                   }`}>
