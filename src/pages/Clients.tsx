@@ -54,7 +54,10 @@ const Clients = () => {
             <h1 className="text-3xl font-heading font-bold text-foreground">Clients</h1>
             <p className="text-muted-foreground mt-1">{clientsData.length} total clients</p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition glow-primary">
+          <button
+            onClick={() => setShowOnboard(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition glow-primary"
+          >
             <Plus className="w-4 h-4" />
             Add Client
           </button>
