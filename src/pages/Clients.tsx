@@ -1,20 +1,43 @@
 import { motion } from "framer-motion";
-import { Search, Plus, ArrowUpRight, MoreHorizontal } from "lucide-react";
+import { Search, Plus, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AppLayout from "@/components/AppLayout";
+import OnboardClientDialog from "@/components/OnboardClientDialog";
+import { supabase } from "@/integrations/supabase/client";
 
-const clientsData = [
-  { id: "1", name: "Acme Corp", projects: 3, status: "Active", revenue: "$12,400", avatar: "A", lastActive: "2 min ago" },
-  { id: "2", name: "TechStart", projects: 2, status: "Active", revenue: "$8,200", avatar: "T", lastActive: "1 hr ago" },
-  { id: "3", name: "GreenLeaf", projects: 4, status: "Active", revenue: "$15,600", avatar: "G", lastActive: "3 hrs ago" },
-  { id: "4", name: "PixelPerfect", projects: 1, status: "Onboarding", revenue: "$0", avatar: "P", lastActive: "1 day ago" },
-  { id: "5", name: "CloudNine", projects: 2, status: "Active", revenue: "$6,800", avatar: "C", lastActive: "2 days ago" },
-  { id: "6", name: "BrightWave", projects: 3, status: "Paused", revenue: "$9,100", avatar: "B", lastActive: "1 week ago" },
+const fallbackClients = [
+  { id: "1", name: "Acme Corp", projects: 3, status: "active", revenue: "$12,400", avatar_initial: "A", lastActive: "2 min ago" },
+  { id: "2", name: "TechStart", projects: 2, status: "active", revenue: "$8,200", avatar_initial: "T", lastActive: "1 hr ago" },
+  { id: "3", name: "GreenLeaf", projects: 4, status: "active", revenue: "$15,600", avatar_initial: "G", lastActive: "3 hrs ago" },
+  { id: "4", name: "PixelPerfect", projects: 1, status: "onboarding", revenue: "$0", avatar_initial: "P", lastActive: "1 day ago" },
 ];
 
 const Clients = () => {
   const [search, setSearch] = useState("");
+  const [showOnboard, setShowOnboard] = useState(false);
+
+  const { data: dbClients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const clientsData = dbClients && dbClients.length > 0
+    ? dbClients.map((c) => ({
+        id: c.id,
+        name: c.name,
+        projects: 0,
+        status: c.status,
+        revenue: `$${Number(c.revenue_mtd || 0).toLocaleString()}`,
+        avatar_initial: c.avatar_initial || c.name.charAt(0),
+        lastActive: new Date(c.created_at).toLocaleDateString(),
+      }))
+    : fallbackClients;
   const filtered = clientsData.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
