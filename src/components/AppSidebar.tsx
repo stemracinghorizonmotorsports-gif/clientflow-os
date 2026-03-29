@@ -75,7 +75,7 @@ const AppSidebar = () => {
       </nav>
 
       {/* Footer */}
-      <div className="p-2">
+      <div className="p-2 space-y-1">
         <NavLink
           to="/settings"
           onClick={onNav}
@@ -84,6 +84,13 @@ const AppSidebar = () => {
           <Settings className="w-4 h-4" />
           {!collapsed && "Settings"}
         </NavLink>
+        <button
+          onClick={() => signOut()}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:text-destructive hover:bg-destructive/10 transition-all w-full ${collapsed ? "justify-center" : ""}`}
+        >
+          <LogOut className="w-4 h-4" />
+          {!collapsed && "Sign Out"}
+        </button>
       </div>
     </>
   );
