@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, FileText, DollarSign, Bell, CheckCircle2, Circle, Clock, Upload, Share2, Copy, Check, Sparkles, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, FileText, DollarSign, Bell, CheckCircle2, Circle, Clock, Upload, Share2, Copy, Check, Sparkles, Loader2, Download, Trash2, File } from "lucide-react";
+import { useState, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,12 +10,11 @@ import { toast } from "sonner";
 
 const tabs = ["Timeline", "Files", "Invoices", "Updates"];
 
-const filesData = [
-  { name: "Brand Guidelines v2.pdf", size: "2.4 MB", date: "Mar 24" },
-  { name: "Homepage Mockup.fig", size: "18 MB", date: "Mar 25" },
-  { name: "SEO Report Draft.docx", size: "540 KB", date: "Mar 20" },
-  { name: "Logo Files.zip", size: "8.2 MB", date: "Mar 22" },
-];
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const ClientWorkspace = () => {
   const { id } = useParams();
@@ -24,6 +23,8 @@ const ClientWorkspace = () => {
   const [activeTab, setActiveTab] = useState("Timeline");
   const [portalLink, setPortalLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: client } = useQuery({
     queryKey: ["client", id],
@@ -77,6 +78,16 @@ const ClientWorkspace = () => {
     enabled: !!id,
   });
 
+  const { data: files = [] } = useQuery({
+    queryKey: ["client-files", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_files").select("*").eq("client_id", id!).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   const generatePortalLink = useMutation({
     mutationFn: async () => {
       if (!user || !id) throw new Error("Missing data");
@@ -100,7 +111,6 @@ const ClientWorkspace = () => {
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
-      // Save the update
       const { error: insertErr } = await supabase.from("client_updates").insert({
         client_id: id,
         user_id: user.id,
@@ -117,10 +127,77 @@ const ClientWorkspace = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (!selectedFiles || !user || !id) return;
+    setUploading(true);
+
+    try {
+      for (const file of Array.from(selectedFiles)) {
+        const storagePath = `${user.id}/${id}/${Date.now()}_${file.name}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("client-files")
+          .upload(storagePath, file);
+        if (uploadErr) throw uploadErr;
+
+        const { error: metaErr } = await supabase.from("client_files").insert({
+          client_id: id,
+          user_id: user.id,
+          file_name: file.name,
+          file_size: file.size,
+          storage_path: storagePath,
+          content_type: file.type || "application/octet-stream",
+        });
+        if (metaErr) throw metaErr;
+      }
+      queryClient.invalidateQueries({ queryKey: ["client-files", id] });
+      toast.success("File(s) uploaded!");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDownload = async (file: any) => {
+    const { data, error } = await supabase.storage
+      .from("client-files")
+      .download(file.storage_path);
+    if (error) { toast.error("Download failed"); return; }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.file_name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const deleteFile = useMutation({
+    mutationFn: async (file: any) => {
+      const { error: storageErr } = await supabase.storage.from("client-files").remove([file.storage_path]);
+      if (storageErr) throw storageErr;
+      const { error: metaErr } = await supabase.from("client_files").delete().eq("id", file.id);
+      if (metaErr) throw metaErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-files", id] });
+      toast.success("File deleted");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const copyLink = () => {
     navigator.clipboard.writeText(portalLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getFileIcon = (contentType: string) => {
+    if (contentType?.startsWith("image/")) return "🖼️";
+    if (contentType?.includes("pdf")) return "📄";
+    if (contentType?.includes("zip") || contentType?.includes("rar")) return "📦";
+    return "📎";
   };
 
   return (
@@ -203,18 +280,52 @@ const ClientWorkspace = () => {
 
           {activeTab === "Files" && (
             <div className="space-y-3">
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground transition">
-                <Upload className="w-4 h-4" />
-                Upload File
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition glow-primary disabled:opacity-50"
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {uploading ? "Uploading..." : "Upload Files"}
               </button>
-              {filesData.map((file, i) => (
-                <div key={i} className="glass-card rounded-xl p-4 flex items-center justify-between">
+
+              {files.length === 0 && !uploading && (
+                <p className="text-sm text-muted-foreground">No files uploaded yet. Click above to add files.</p>
+              )}
+
+              {files.map((file: any) => (
+                <div key={file.id} className="glass-card rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">{file.size} · {file.date}</p>
+                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-lg">
+                      {getFileIcon(file.content_type)}
                     </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{file.file_name}</p>
+                      <p className="text-xs text-muted-foreground">{formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDownload(file)}
+                      className="p-2 rounded-lg bg-secondary hover:bg-muted transition text-muted-foreground hover:text-foreground"
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteFile.mutate(file)}
+                      className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
