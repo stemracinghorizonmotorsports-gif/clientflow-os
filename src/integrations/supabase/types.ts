@@ -65,6 +65,41 @@ export type Database = {
           },
         ]
       }
+      client_portal_tokens: {
+        Row: {
+          client_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           avatar_initial: string | null
