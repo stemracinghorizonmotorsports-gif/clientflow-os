@@ -1,8 +1,12 @@
 import { motion } from "framer-motion";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, FileText, DollarSign, Bell, CheckCircle2, Circle, Clock, Upload } from "lucide-react";
+import { ArrowLeft, FileText, DollarSign, Bell, CheckCircle2, Circle, Clock, Upload, Share2, Copy, Check } from "lucide-react";
 import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import AppLayout from "@/components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const tabs = ["Timeline", "Files", "Invoices", "Updates"];
 
@@ -34,7 +38,34 @@ const updatesData = [
 
 const ClientWorkspace = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("Timeline");
+  const [portalLink, setPortalLink] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const generatePortalLink = useMutation({
+    mutationFn: async () => {
+      if (!user || !id) throw new Error("Missing data");
+      const { data, error } = await supabase
+        .from("client_portal_tokens")
+        .insert({ client_id: id, user_id: user.id })
+        .select("token")
+        .single();
+      if (error) throw error;
+      return `${window.location.origin}/portal/${data.token}`;
+    },
+    onSuccess: (link) => {
+      setPortalLink(link);
+      toast.success("Portal link generated!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(portalLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <AppLayout>
@@ -45,13 +76,34 @@ const ClientWorkspace = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Clients
           </Link>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <span className="text-lg font-bold text-primary">A</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <span className="text-lg font-bold text-primary">A</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-heading font-bold text-foreground">Acme Corp</h1>
+                <p className="text-sm text-muted-foreground">3 active projects · Client since Jan 2024</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-heading font-bold text-foreground">Acme Corp</h1>
-              <p className="text-sm text-muted-foreground">3 active projects · Client since Jan 2024</p>
+            <div className="flex items-center gap-2">
+              {portalLink ? (
+                <div className="flex items-center gap-2">
+                  <input readOnly value={portalLink} className="px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-foreground w-48 truncate" />
+                  <button onClick={copyLink} className="p-2 rounded-lg bg-secondary hover:bg-muted transition text-muted-foreground hover:text-foreground">
+                    {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => generatePortalLink.mutate()}
+                  disabled={generatePortalLink.isPending}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-secondary border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground transition"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share Portal
+                </button>
+              )}
             </div>
           </div>
         </motion.div>
