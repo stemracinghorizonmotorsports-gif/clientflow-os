@@ -3,37 +3,45 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import Clients from "./pages/Clients.tsx";
-import ClientWorkspace from "./pages/ClientWorkspace.tsx";
-import Projects from "./pages/Projects.tsx";
-import Approvals from "./pages/Approvals.tsx";
-import Messages from "./pages/Messages.tsx";
-import Billing from "./pages/Billing.tsx";
-import ValueDashboard from "./pages/ValueDashboard.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Auth from "./pages/Auth";
+import Index from "./pages/Index";
+import Clients from "./pages/Clients";
+import ClientWorkspace from "./pages/ClientWorkspace";
+import Projects from "./pages/Projects";
+import Approvals from "./pages/Approvals";
+import Messages from "./pages/Messages";
+import Billing from "./pages/Billing";
+import ValueDashboard from "./pages/ValueDashboard";
+import ClientPortal from "./pages/ClientPortal";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/clients/:id" element={<ClientWorkspace />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/approvals" element={<Approvals />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/billing" element={<Billing />} />
-          <Route path="/value" element={<ValueDashboard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/portal/:token" element={<ClientPortal />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/clients/:id" element={<ProtectedRoute><ClientWorkspace /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+            <Route path="/approvals" element={<ProtectedRoute><Approvals /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+            <Route path="/value" element={<ProtectedRoute><ValueDashboard /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
