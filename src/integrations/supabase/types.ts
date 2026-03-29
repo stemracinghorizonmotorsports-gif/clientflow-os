@@ -65,6 +65,47 @@ export type Database = {
           },
         ]
       }
+      client_files: {
+        Row: {
+          client_id: string
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_size: number
+          id: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number
+          id?: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_portal_tokens: {
         Row: {
           client_id: string
