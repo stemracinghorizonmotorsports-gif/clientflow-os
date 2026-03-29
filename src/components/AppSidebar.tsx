@@ -28,6 +28,7 @@ const navItems = [
 
 const AppSidebar = () => {
   const location = useLocation();
+  const { signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
