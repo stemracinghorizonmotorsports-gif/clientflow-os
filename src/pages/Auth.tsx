@@ -137,6 +137,15 @@ const Auth = () => {
               {oauthLoading === "apple" ? <Loader2 className="w-5 h-5 animate-spin" /> : <AppleIcon />}
               Continue with Apple
             </button>
+
+            <button
+              onClick={() => handleOAuth("microsoft")}
+              disabled={!!oauthLoading}
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-secondary border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition disabled:opacity-50"
+            >
+              {oauthLoading === "microsoft" ? <Loader2 className="w-5 h-5 animate-spin" /> : <MicrosoftIcon />}
+              Continue with Microsoft
+            </button>
           </div>
 
           {/* Divider */}
