@@ -70,7 +70,7 @@ const Auth = () => {
     }
   };
 
-  const handleOAuth = async (provider: "google" | "apple") => {
+  const handleOAuth = async (provider: "google" | "apple" | "microsoft") => {
     setError("");
     setOauthLoading(provider);
     try {
