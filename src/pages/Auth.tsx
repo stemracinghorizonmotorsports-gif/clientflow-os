@@ -21,6 +21,15 @@ const AppleIcon = () => (
   </svg>
 );
 
+const MicrosoftIcon = () => (
+  <svg viewBox="0 0 21 21" className="w-5 h-5" fill="none">
+    <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+    <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+    <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+    <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+  </svg>
+);
+
 const Auth = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -61,7 +70,7 @@ const Auth = () => {
     }
   };
 
-  const handleOAuth = async (provider: "google" | "apple") => {
+  const handleOAuth = async (provider: "google" | "apple" | "microsoft") => {
     setError("");
     setOauthLoading(provider);
     try {
@@ -127,6 +136,15 @@ const Auth = () => {
             >
               {oauthLoading === "apple" ? <Loader2 className="w-5 h-5 animate-spin" /> : <AppleIcon />}
               Continue with Apple
+            </button>
+
+            <button
+              onClick={() => handleOAuth("microsoft")}
+              disabled={!!oauthLoading}
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-secondary border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition disabled:opacity-50"
+            >
+              {oauthLoading === "microsoft" ? <Loader2 className="w-5 h-5 animate-spin" /> : <MicrosoftIcon />}
+              Continue with Microsoft
             </button>
           </div>
 
