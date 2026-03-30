@@ -1,73 +1,53 @@
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Circle, Clock, FileText, DollarSign, Bell, Zap, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const tabs = ["Timeline", "Files", "Invoices", "Updates"];
+const tabs = ["Timeline", "Invoices", "Updates"];
 
 const ClientPortal = () => {
   const { token } = useParams();
   const [activeTab, setActiveTab] = useState("Timeline");
 
-  // Validate token and get client_id
-  const { data: portalData, isLoading: tokenLoading, error: tokenError } = useQuery({
-    queryKey: ["portal-token", token],
+  // Validate token via secure RPC
+  const { data: client, isLoading: tokenLoading, error: tokenError } = useQuery({
+    queryKey: ["portal-client", token],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("client_portal_tokens")
-        .select("client_id, expires_at")
-        .eq("token", token!)
-        .single();
-      if (error || !data) throw new Error("Invalid or expired link");
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        throw new Error("This portal link has expired");
-      }
-      return data;
+      const { data, error } = await supabase.rpc("get_portal_client", { _token: token! });
+      if (error || !data || data.length === 0) throw new Error("Invalid or expired link");
+      return data[0];
     },
     enabled: !!token,
     retry: false,
   });
 
-  const clientId = portalData?.client_id;
-
-  const { data: client } = useQuery({
-    queryKey: ["portal-client", clientId],
-    queryFn: async () => {
-      const { data } = await supabase.from("clients").select("*").eq("id", clientId!).single();
-      return data;
-    },
-    enabled: !!clientId,
-  });
-
   const { data: projects = [] } = useQuery({
-    queryKey: ["portal-projects", clientId],
+    queryKey: ["portal-projects", token],
     queryFn: async () => {
-      const { data } = await supabase.from("projects").select("*").eq("client_id", clientId!);
+      const { data } = await supabase.rpc("get_portal_projects", { _token: token! });
       return data || [];
     },
-    enabled: !!clientId,
-  });
-
-  const { data: tasks = [] } = useQuery({
-    queryKey: ["portal-tasks", clientId, projects],
-    queryFn: async () => {
-      const ids = projects.map((p) => p.id);
-      if (!ids.length) return [];
-      const { data } = await supabase.from("tasks").select("*").in("project_id", ids).order("sort_order");
-      return data || [];
-    },
-    enabled: projects.length > 0,
+    enabled: !!token && !!client,
   });
 
   const { data: invoices = [] } = useQuery({
-    queryKey: ["portal-invoices", clientId],
+    queryKey: ["portal-invoices", token],
     queryFn: async () => {
-      const { data } = await supabase.from("invoices").select("*").eq("client_id", clientId!);
+      const { data } = await supabase.rpc("get_portal_invoices", { _token: token! });
       return data || [];
     },
-    enabled: !!clientId,
+    enabled: !!token && !!client,
+  });
+
+  const { data: updates = [] } = useQuery({
+    queryKey: ["portal-updates", token],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_portal_updates", { _token: token! });
+      return data || [];
+    },
+    enabled: !!token && !!client,
   });
 
   if (tokenLoading) {
@@ -107,12 +87,11 @@ const ClientPortal = () => {
       </header>
 
       <div className="max-w-5xl mx-auto p-4 pt-6 space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[
             { label: "Active Projects", value: projects.length },
-            { label: "Tasks Completed", value: tasks.filter((t) => t.status === "completed").length },
-            { label: "Total Tasks", value: tasks.length },
             { label: "Invoices", value: invoices.length },
+            { label: "Updates", value: updates.length },
           ].map((stat, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-card rounded-xl p-4 text-center">
               <p className="text-2xl font-heading font-bold text-foreground">{stat.value}</p>
@@ -132,24 +111,22 @@ const ClientPortal = () => {
         <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
           {activeTab === "Timeline" && (
             <div className="space-y-4">
-              {tasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks yet.</p>}
-              {tasks.map((task, i) => (
-                <div key={task.id} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    {task.status === "completed" ? <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" /> : task.status === "in-progress" ? <Clock className="w-5 h-5 text-primary flex-shrink-0" /> : <Circle className="w-5 h-5 text-muted-foreground flex-shrink-0" />}
-                    {i < tasks.length - 1 && <div className="w-px h-full bg-border/50 mt-2" />}
+              {projects.length === 0 && <p className="text-sm text-muted-foreground">No projects yet.</p>}
+              {projects.map((project) => (
+                <div key={project.id} className="glass-card rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-foreground text-sm">{project.name}</h3>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${project.status === "completed" ? "bg-success/10 text-success" : "bg-primary/10 text-primary"}`}>{project.status}</span>
                   </div>
-                  <div className="glass-card rounded-xl p-4 flex-1 mb-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-foreground text-sm">{task.title}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${task.status === "completed" ? "bg-success/10 text-success" : task.status === "in-progress" ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"}`}>{task.status}</span>
+                  {project.progress != null && (
+                    <div className="mt-2 h-1.5 bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${project.progress}%` }} />
                     </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
-          {activeTab === "Files" && <p className="text-sm text-muted-foreground">File sharing coming soon.</p>}
           {activeTab === "Invoices" && (
             <div className="space-y-3">
               {invoices.length === 0 && <p className="text-sm text-muted-foreground">No invoices yet.</p>}
@@ -171,12 +148,23 @@ const ClientPortal = () => {
             </div>
           )}
           {activeTab === "Updates" && (
-            <div className="glass-card rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Bell className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-medium text-foreground">Welcome to your portal!</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">Track your project progress, view invoices, and stay up to date — all in one place.</p>
+            <div className="space-y-3">
+              {updates.length === 0 && (
+                <div className="glass-card rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bell className="w-4 h-4 text-primary" />
+                    <h3 className="text-sm font-medium text-foreground">Welcome to your portal!</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Track your project progress, view invoices, and stay up to date.</p>
+                </div>
+              )}
+              {updates.map((update) => (
+                <div key={update.id} className="glass-card rounded-xl p-4">
+                  <h3 className="text-sm font-medium text-foreground mb-1">{update.title}</h3>
+                  <p className="text-sm text-muted-foreground">{update.body}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{new Date(update.created_at).toLocaleDateString()}</p>
+                </div>
+              ))}
             </div>
           )}
         </motion.div>
