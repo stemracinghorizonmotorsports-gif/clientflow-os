@@ -424,7 +424,50 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_portal_client: {
+        Args: { _token: string }
+        Returns: {
+          company: string
+          id: string
+          name: string
+          status: string
+        }[]
+      }
+      get_portal_invoices: {
+        Args: { _token: string }
+        Returns: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          invoice_number: string
+          status: string
+        }[]
+      }
+      get_portal_projects: {
+        Args: { _token: string }
+        Returns: {
+          id: string
+          name: string
+          progress: number
+          status: string
+        }[]
+      }
+      get_portal_updates: {
+        Args: { _token: string }
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          title: string
+        }[]
+      }
+      lookup_portal_token: {
+        Args: { _token: string }
+        Returns: {
+          client_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
