@@ -41,23 +41,8 @@ const Messages = () => {
       return data || [];
     },
     enabled: !!activeProjectId,
+    refetchInterval: 3000, // Poll every 3s instead of realtime
   });
-
-  // Real-time subscription
-  useEffect(() => {
-    if (!activeProjectId) return;
-    const channel = supabase
-      .channel(`messages-${activeProjectId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `project_id=eq.${activeProjectId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["messages", activeProjectId] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [activeProjectId, queryClient]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
