@@ -2,11 +2,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, CheckCircle2, Circle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import NewProjectDialog from "@/components/NewProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const Projects = () => {
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: projects = [] } = useQuery({
     queryKey: ["projects-with-tasks"],
@@ -69,7 +71,8 @@ const Projects = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="glass-card rounded-xl p-6"
+              className="glass-card rounded-xl p-6 cursor-pointer hover:border-primary/30 transition"
+              onClick={() => project.id && navigate(`/projects/${project.id}`)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div>

@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Clients from "./pages/Clients";
 import ClientWorkspace from "./pages/ClientWorkspace";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import Approvals from "./pages/Approvals";
 import Messages from "./pages/Messages";
 import Billing from "./pages/Billing";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/clients/:id" element={<ProtectedRoute><ClientWorkspace /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+            <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
             <Route path="/approvals" element={<ProtectedRoute><Approvals /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
