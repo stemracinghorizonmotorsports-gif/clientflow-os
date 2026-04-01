@@ -7,6 +7,7 @@ import NewProjectDialog from "@/components/NewProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const Projects = () => {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { data: projects = [] } = useQuery({
     queryKey: ["projects-with-tasks"],
     queryFn: async () => {
