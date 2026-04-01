@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, CheckCircle2, Circle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import AppLayout from "@/components/AppLayout";
+import NewProjectDialog from "@/components/NewProjectDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const Projects = () => {
