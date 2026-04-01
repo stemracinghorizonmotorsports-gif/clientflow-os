@@ -108,6 +108,7 @@ const Projects = () => {
             </motion.div>
           ))}
         </div>
+        <NewProjectDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
       </div>
     </AppLayout>
   );
