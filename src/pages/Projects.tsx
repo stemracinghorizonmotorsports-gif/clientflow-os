@@ -74,7 +74,6 @@ const Projects = () => {
               className="glass-card rounded-xl p-6 cursor-pointer hover:border-primary/30 transition"
               onClick={() => project.id && navigate(`/projects/${project.id}`)}
             >
-            >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="font-heading font-semibold text-foreground">{project.name}</h3>
