@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Clients from "./pages/Clients";
 import ClientWorkspace from "./pages/ClientWorkspace";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import Approvals from "./pages/Approvals";
 import Messages from "./pages/Messages";
 import Billing from "./pages/Billing";
