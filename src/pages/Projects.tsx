@@ -71,7 +71,9 @@ const Projects = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="glass-card rounded-xl p-6"
+              className="glass-card rounded-xl p-6 cursor-pointer hover:border-primary/30 transition"
+              onClick={() => project.id && navigate(`/projects/${project.id}`)}
+            >
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
