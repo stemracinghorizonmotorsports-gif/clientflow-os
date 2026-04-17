@@ -1,13 +1,34 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, X, Clock, Eye } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+type Approval = {
+  id: string;
+  title: string;
+  client: string;
+  project: string;
+  submitted: string;
+  type: string;
+  status: "pending" | "approved" | "rejected";
+};
 
 const Approvals = () => {
   const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<Approval | null>(null);
 
-  const { data: approvals = [] } = useQuery({
+  const { data: approvals = [], isLoading } = useQuery({
     queryKey: ["approvals"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -23,7 +44,7 @@ const Approvals = () => {
         submitted: new Date(a.created_at).toLocaleDateString(),
         type: a.type,
         status: a.status as "pending" | "approved" | "rejected",
-      }));
+      })) as Approval[];
     },
   });
 
@@ -32,23 +53,15 @@ const Approvals = () => {
       const { error } = await supabase.from("approvals").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["approvals"] }),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["approvals"] });
+      toast.success(vars.status === "approved" ? "Approved" : "Rejected");
+    },
+    onError: (err: any) => toast.error(err.message),
   });
 
-  const fallbackApprovals = [
-    { id: "1", title: "Homepage Final Design", client: "Acme Corp", project: "Brand Redesign", submitted: "2 hrs ago", type: "Design", status: "pending" as const },
-    { id: "2", title: "Blog Post — Q1 Recap", client: "TechStart", project: "Content Strategy", submitted: "5 hrs ago", type: "Content", status: "pending" as const },
-  ];
-
-  const displayApprovals = approvals.length > 0 ? approvals : fallbackApprovals;
-  const pending = displayApprovals.filter((a) => a.status === "pending");
-  const resolved = displayApprovals.filter((a) => a.status !== "pending");
-
-  const handleAction = (id: string, action: "approved" | "rejected") => {
-    if (approvals.length > 0) {
-      updateStatus.mutate({ id, status: action });
-    }
-  };
+  const pending = approvals.filter((a) => a.status === "pending");
+  const resolved = approvals.filter((a) => a.status !== "pending");
 
   return (
     <AppLayout>
@@ -57,6 +70,19 @@ const Approvals = () => {
           <h1 className="text-3xl font-heading font-bold text-foreground">Approvals</h1>
           <p className="text-muted-foreground mt-1">{pending.length} pending review</p>
         </motion.div>
+
+        {isLoading && (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        )}
+
+        {!isLoading && approvals.length === 0 && (
+          <div className="glass-card rounded-xl p-12 text-center">
+            <p className="text-foreground font-medium">No approvals yet</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Approval requests from your projects will appear here.
+            </p>
+          </div>
+        )}
 
         {pending.length > 0 && (
           <div className="space-y-3">
@@ -80,13 +106,27 @@ const Approvals = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground mr-2">{item.type}</span>
-                  <button className="p-2 rounded-lg bg-secondary hover:bg-muted transition text-muted-foreground hover:text-foreground">
+                  <button
+                    onClick={() => setSelected(item)}
+                    title="View details"
+                    className="p-2 rounded-lg bg-secondary hover:bg-muted transition text-muted-foreground hover:text-foreground"
+                  >
                     <Eye className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleAction(item.id, "approved")} className="p-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition">
+                  <button
+                    onClick={() => updateStatus.mutate({ id: item.id, status: "approved" })}
+                    disabled={updateStatus.isPending}
+                    title="Approve"
+                    className="p-2 rounded-lg bg-success/10 text-success hover:bg-success/20 transition disabled:opacity-50"
+                  >
                     <Check className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleAction(item.id, "rejected")} className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition">
+                  <button
+                    onClick={() => updateStatus.mutate({ id: item.id, status: "rejected" })}
+                    disabled={updateStatus.isPending}
+                    title="Reject"
+                    className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition disabled:opacity-50"
+                  >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -123,6 +163,59 @@ const Approvals = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-heading">{selected?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Client</span>
+              <span className="text-foreground">{selected?.client}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Project</span>
+              <span className="text-foreground">{selected?.project}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Type</span>
+              <span className="text-foreground">{selected?.type}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Submitted</span>
+              <span className="text-foreground">{selected?.submitted}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Status</span>
+              <span className="text-foreground capitalize">{selected?.status}</span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            {selected?.status === "pending" && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (selected) updateStatus.mutate({ id: selected.id, status: "rejected" });
+                    setSelected(null);
+                  }}
+                >
+                  <X className="w-4 h-4 mr-1" /> Reject
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (selected) updateStatus.mutate({ id: selected.id, status: "approved" });
+                    setSelected(null);
+                  }}
+                >
+                  <Check className="w-4 h-4 mr-1" /> Approve
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };

@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Plus, DollarSign, TrendingUp, Receipt, BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { Plus, DollarSign, TrendingUp, Receipt, BarChart3, CreditCard, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,11 +28,13 @@ import {
 const Billing = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showDialog, setShowDialog] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [clientId, setClientId] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["invoices"],
@@ -78,6 +81,47 @@ const Billing = () => {
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  // Verify payment when returning from Stripe
+  useEffect(() => {
+    const status = searchParams.get("payment");
+    const invoiceId = searchParams.get("invoice");
+    if (status === "success" && invoiceId) {
+      (async () => {
+        const { data, error } = await supabase.functions.invoke("verify-invoice-payment", {
+          body: { invoice_id: invoiceId },
+        });
+        if (!error && (data as any)?.paid) {
+          toast.success("Payment confirmed!");
+          queryClient.invalidateQueries({ queryKey: ["invoices"] });
+        } else {
+          toast.message("Payment is processing. Refresh shortly.");
+        }
+        setSearchParams({}, { replace: true });
+      })();
+    } else if (status === "cancelled") {
+      toast.message("Payment cancelled");
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePay = async (invoiceId: string) => {
+    setPayingId(invoiceId);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-invoice-payment", {
+        body: { invoice_id: invoiceId },
+      });
+      if (error) throw error;
+      const url = (data as any)?.url;
+      if (!url) throw new Error("No checkout URL returned");
+      window.open(url, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setPayingId(null);
+    }
+  };
 
   const totalRevenue = invoices.reduce((sum, inv: any) => sum + Number(inv.amount || 0), 0);
   const paidAmount = invoices.filter((inv: any) => inv.status === "paid").reduce((sum, inv: any) => sum + Number(inv.amount || 0), 0);
@@ -136,6 +180,16 @@ const Billing = () => {
                     }`}>
                       {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
                     </span>
+                    {inv.status !== "paid" && (
+                      <button
+                        onClick={() => handlePay(inv.id)}
+                        disabled={payingId === inv.id}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
+                      >
+                        {payingId === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                        Pay
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
