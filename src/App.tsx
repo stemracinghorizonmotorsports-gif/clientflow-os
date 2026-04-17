@@ -16,6 +16,7 @@ import Messages from "./pages/Messages";
 import Billing from "./pages/Billing";
 import ValueDashboard from "./pages/ValueDashboard";
 import ClientPortal from "./pages/ClientPortal";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
             <Route path="/value" element={<ProtectedRoute><ValueDashboard /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
