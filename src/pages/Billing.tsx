@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Plus, DollarSign, TrendingUp, Receipt, BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { Plus, DollarSign, TrendingUp, Receipt, BarChart3, CreditCard, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,11 +28,13 @@ import {
 const Billing = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showDialog, setShowDialog] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [clientId, setClientId] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["invoices"],
