@@ -39,12 +39,7 @@ const Projects = () => {
     },
   });
 
-  const fallbackProjects = [
-    { name: "Brand Redesign", client: "Acme Corp", progress: 75, status: "In Progress", milestones: [{ name: "Discovery", done: true }, { name: "Design", done: true }, { name: "Development", done: false }, { name: "Launch", done: false }] },
-    { name: "SEO Optimization", client: "TechStart", progress: 40, status: "In Progress", milestones: [{ name: "Audit", done: true }, { name: "On-Page", done: false }, { name: "Off-Page", done: false }, { name: "Report", done: false }] },
-  ];
-
-  const displayProjects = projects.length > 0 ? projects : fallbackProjects;
+  const displayProjects = projects;
 
   return (
     <AppLayout>
@@ -63,6 +58,13 @@ const Projects = () => {
             New Project
           </button>
         </motion.div>
+
+        {displayProjects.length === 0 && (
+          <div className="glass-card rounded-xl p-12 text-center">
+            <p className="text-foreground font-medium">No projects yet</p>
+            <p className="text-sm text-muted-foreground mt-1">Click “New Project” to create your first one.</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {displayProjects.map((project, i) => (
