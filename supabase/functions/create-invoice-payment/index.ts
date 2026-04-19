@@ -88,9 +88,22 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("create-invoice-payment error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const SAFE: Record<string, string> = {
+      "Missing authorization header": "Authentication required",
+      "Not authenticated": "Authentication required",
+      "invoice_id is required": "Invalid request",
+      "Invoice not found": "Invoice not found",
+      "Forbidden": "Forbidden",
+      "Invoice already paid": "Invoice already paid",
+    };
+    const msg = SAFE[error?.message] ?? "Unable to start payment";
+    const status = msg === "Authentication required" ? 401
+      : msg === "Forbidden" ? 403
+      : msg === "Invoice not found" ? 404
+      : 400;
+    return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status,
     });
   }
 });
