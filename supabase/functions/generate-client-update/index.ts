@@ -41,6 +41,30 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Per-user rate limit: 10 calls / hour
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: usageCount } = await admin
+      .from("ai_usage_log")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userData.user.id)
+      .eq("function_name", "generate-client-update")
+      .gte("created_at", oneHourAgo);
+    if ((usageCount ?? 0) >= 10) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again shortly." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    await admin.from("ai_usage_log").insert({
+      user_id: userData.user.id,
+      function_name: "generate-client-update",
+    });
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
