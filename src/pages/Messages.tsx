@@ -91,7 +91,7 @@ const Messages = () => {
 
         <div className="glass-card rounded-xl overflow-hidden flex" style={{ height: "calc(100vh - 200px)" }}>
           {/* Sidebar */}
-          <div className="w-80 border-r border-border/50 flex flex-col">
+          <div className="w-80 border-r border-border flex flex-col">
             <div className="p-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -112,7 +112,7 @@ const Messages = () => {
                 <button
                   key={project.id}
                   onClick={() => setActiveProjectId(project.id)}
-                  className={`w-full text-left p-4 border-b border-border/30 transition-all ${
+                  className={`w-full text-left p-4 border-b border-border/60 transition-all ${
                     activeProjectId === project.id ? "bg-secondary" : "hover:bg-secondary/50"
                   }`}
                 >
@@ -129,7 +129,7 @@ const Messages = () => {
           <div className="flex-1 flex flex-col">
             {activeProject ? (
               <>
-                <div className="p-4 border-b border-border/50">
+                <div className="p-4 border-b border-border">
                   <h3 className="font-heading font-semibold text-foreground">{(activeProject as any).clients?.name || "Client"}</h3>
                   <p className="text-xs text-muted-foreground">{activeProject.name}</p>
                 </div>
@@ -159,7 +159,7 @@ const Messages = () => {
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
-                <div className="p-4 border-t border-border/50">
+                <div className="p-4 border-t border-border">
                   <div className="flex gap-2">
                     <input
                       type="text"
