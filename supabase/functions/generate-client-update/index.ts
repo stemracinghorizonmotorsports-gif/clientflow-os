@@ -112,7 +112,8 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("generate-client-update error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return new Response(JSON.stringify({ error: safeError(msg) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
