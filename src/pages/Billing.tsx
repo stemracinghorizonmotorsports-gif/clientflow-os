@@ -168,7 +168,7 @@ const Billing = () => {
           ) : (
             <div className="space-y-3">
               {invoices.map((inv: any) => (
-                <div key={inv.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                <div key={inv.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                   <div>
                     <p className="text-sm font-medium text-foreground">{inv.invoice_number}</p>
                     <p className="text-xs text-muted-foreground">{inv.clients?.name || "Unknown"} · {new Date(inv.created_at).toLocaleDateString()}</p>
