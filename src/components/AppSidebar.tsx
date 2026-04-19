@@ -13,11 +13,15 @@ import {
   Menu,
   X,
   LogOut,
+  UserPlus,
+  Columns3,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Leads", icon: UserPlus, path: "/leads" },
+  { label: "Pipeline", icon: Columns3, path: "/pipeline" },
   { label: "Clients", icon: Users, path: "/clients" },
   { label: "Projects", icon: FolderKanban, path: "/projects" },
   { label: "Approvals", icon: CheckSquare, path: "/approvals" },
